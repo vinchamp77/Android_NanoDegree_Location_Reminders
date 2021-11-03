@@ -7,46 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:46798016969:android:d7533c7df485e2e0b65818",
+        "mobilesdk_app_id": "1:46798016969:android:cfe76957baaf3e61b65818",
         "android_client_info": {
           "package_name": "com.udacity.project4"
         }
       },
       "oauth_client": [
         {
-          "client_id": "46798016969-bprvicuqv6cbifc2hvsltscfa4kvckkd.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBv6MGyflBwvItkx_qlKXXL8xJwGyxkZnY"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "46798016969-bprvicuqv6cbifc2hvsltscfa4kvckkd.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:46798016969:android:d14ddddb6d35b322b65818",
-        "android_client_info": {
-          "package_name": "com.udacity.project4.location.reminders"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "46798016969-fiogrmfc86r42lgasrpqvtvkpobshdvf.apps.googleusercontent.com",
+          "client_id": "46798016969-00jhpj5qger5dlolqoqse1uu21rk8m3g.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.udacity.project4.location.reminders",
+            "package_name": "com.udacity.project4",
             "certificate_hash": "a8dc84ab987442e087ec65f1bc39958b3f420f04"
           }
         },
