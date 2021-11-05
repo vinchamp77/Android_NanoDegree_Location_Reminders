@@ -71,8 +71,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun onLocationSelected() {
 
-        _viewModel.latitude.value = marker?.position?.latitude
-        _viewModel.longitude.value = marker?.position?.longitude
+        marker?.let {
+            _viewModel.reminderSelectedLocationStr.value = it.title
+            _viewModel.latitude.value = it.position.latitude
+            _viewModel.longitude.value = it.position.longitude
+        }
 
         findNavController().popBackStack()
     }
