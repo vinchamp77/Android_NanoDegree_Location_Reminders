@@ -179,7 +179,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         requestLocationCallback()
     }
 
-    /* This DOES NOT Work */
+    /* This DOES NOT Work when device location is off*/
     @SuppressLint("MissingPermission")
     private fun requestLocationCallback() {
 
@@ -207,27 +207,27 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             fusedLocationProviderClient.requestLocationUpdates(this, locationCallback, Looper.myLooper())
         }
 
+        /* Another approach - commented out here for future reference
+        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        val lastLocationTask = fusedLocationProviderClient.lastLocation
 
-//        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-//        val lastLocationTask = fusedLocationProviderClient.lastLocation
-//
-//        // On completion, zoom to the user location and add marker
-//        lastLocationTask.addOnCompleteListener(requireActivity()) { task ->
-//
-//            if(task.isSuccessful) {
-//                val taskResult = task.result
-//                taskResult?.run {
-//
-//                    val latLng = LatLng(latitude, longitude)
-//                    map.moveCamera(
-//                        CameraUpdateFactory.newLatLngZoom(
-//                            latLng,
-//                            MapZoomLevel.Streets.level
-//                        )
-//                    )
-//                }
-//            }
-//        }
+        // On completion, zoom to the user location and add marker
+        lastLocationTask.addOnCompleteListener(requireActivity()) { task ->
+
+            if(task.isSuccessful) {
+                val taskResult = task.result
+                taskResult?.run {
+
+                    val latLng = LatLng(latitude, longitude)
+                    map.moveCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            latLng,
+                            MapZoomLevel.Streets.level
+                        )
+                    )
+                }
+            }
+        }*/
     }
 
     override fun onRequestPermissionsResult(
@@ -249,6 +249,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
+    /* Commented out here because location device setting is not required but I can't get it work without
+    device location set to ON. So keep the code here for future reference
+    */
 //    /*
 //    *  Uses the Location Client to check the current state of location settings, and gives the user
 //    *  the opportunity to turn on location services within our app.
