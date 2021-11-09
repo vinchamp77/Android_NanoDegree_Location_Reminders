@@ -92,6 +92,9 @@ dependencies {
     testImplementation "com.google.truth:truth:$truthVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
 
+    // Koin
+    testImplementation('org.koin:koin-test:2.0.1') { exclude group: 'org.mockito' }
+
     // AndroidX Test - JVM testing
     testImplementation "androidx.test:core-ktx:$androidXTestCoreVersion"
     testImplementation "androidx.test.ext:junit-ktx:$androidXTestExtKotlinRunnerVersion"

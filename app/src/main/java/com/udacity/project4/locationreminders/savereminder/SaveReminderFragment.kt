@@ -3,20 +3,22 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
+import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
@@ -29,8 +31,11 @@ import org.koin.android.ext.android.inject
 class SaveReminderFragment : BaseFragment() {
 
     companion object {
+        private const val TAG = "SaveReminderFragment"
+
         private const val FINE_LOCATION_REQUEST_CODE = 33
         private const val FINE_AND_BACKGROUND_LOCATIONS_REQUEST_CODE = 34
+        private const val TURN_DEVICE_LOCATION_ON_REQUEST_CODE = 35
 
         private const val FINE_LOCATION_PERMISSION_INDEX = 0
         private const val BACKGROUND_LOCATION_PERMISSION_INDEX = 1
@@ -48,14 +53,20 @@ class SaveReminderFragment : BaseFragment() {
     private lateinit var geofencingClient: GeofencingClient
     // A PendingIntent for the Broadcast Receiver that handles geofence transitions.
     private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(requireContext(), GeofenceBroadcastReceiver::class.java)
+        val intent = Intent(contxt, GeofenceBroadcastReceiver::class.java)
         intent.action = GeofenceBroadcastReceiver.ACTION_GEOFENCE_EVENT
         PendingIntent.getBroadcast(
-            requireContext(),
+            contxt,
             0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
+    private lateinit var contxt: Context
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        contxt = context
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -99,7 +110,8 @@ class SaveReminderFragment : BaseFragment() {
                 _viewModel.saveReminder(reminderDataItem)
 
                 if (fineAndBackgroundLocationPermissionsApproved()) {
-                    startGeoFence()
+                    //startGeoFence()
+                    checkDeviceLocationSettingsAndStartGeofence()
                 } else {
                     requestFineAndBackgroundLocationPermissions()
                 }
@@ -129,11 +141,7 @@ class SaveReminderFragment : BaseFragment() {
             else -> FINE_LOCATION_REQUEST_CODE
         }
 
-        ActivityCompat.requestPermissions(
-            requireActivity(),
-            permissionsArray,
-            requestCode
-        )
+        requestPermissions(permissionsArray, requestCode)
     }
 
     // Determines whether the app has the appropriate permissions across
@@ -170,7 +178,53 @@ class SaveReminderFragment : BaseFragment() {
             _viewModel.showSnackBarInt.value = R.string.permission_denied_explanation
 
         } else {
-            startGeoFence()
+
+            checkDeviceLocationSettingsAndStartGeofence()
+        }
+    }
+
+    /*
+    *  Uses the Location Client to check the current state of location settings, and gives the user
+    *  the opportunity to turn on location services within our app.
+    */
+    private fun checkDeviceLocationSettingsAndStartGeofence(resolve:Boolean = true) {
+
+        val locationRequest = LocationRequest.create().apply {
+            priority = LocationRequest.PRIORITY_LOW_POWER
+        }
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        val settingsClient = LocationServices.getSettingsClient(requireActivity())
+        val locationSettingsResponseTask = settingsClient.checkLocationSettings(builder.build())
+
+        locationSettingsResponseTask.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException && resolve){
+                try {
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                        TURN_DEVICE_LOCATION_ON_REQUEST_CODE,
+                        null,
+                        0,
+                        0,
+                        0,
+                        null)
+
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
+                }
+            } else {
+                Snackbar.make(
+                    requireView(),
+                    R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
+                ).setAction(android.R.string.ok) {
+                    checkDeviceLocationSettingsAndStartGeofence()
+                }.show()
+            }
+        }
+
+        locationSettingsResponseTask.addOnCompleteListener {
+            if ( it.isSuccessful ) {
+                startGeoFence()
+            }
         }
     }
 
@@ -192,5 +246,19 @@ class SaveReminderFragment : BaseFragment() {
             .build()
 
         geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)
+    }
+
+    /*
+    *  When we get the result from asking the user to turn on device location, we call
+    *  checkDeviceLocationSettingsAndStartGeofence again to make sure it's actually on, but
+    *  we don't resolve the check to keep the user from seeing an endless loop.
+    */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == TURN_DEVICE_LOCATION_ON_REQUEST_CODE) {
+            checkDeviceLocationSettingsAndStartGeofence(false)
+        }
     }
 }

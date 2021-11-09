@@ -3,19 +3,24 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.*
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.fragment.findNavController
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
@@ -27,7 +32,11 @@ import java.util.*
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     companion object {
+        private const val TAG = "SaveReminderFragment"
+
         private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 1
+        private const val TURN_DEVICE_LOCATION_ON_REQUEST_CODE = 29
+
         private val DEFAULT_LAT_LNG = LatLng(-34.0, 151.0)  // Sydney
     }
 
@@ -125,10 +134,18 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             requireContext(),
             R.raw.map_style))
 
-        // device location callback
-        addLastLocationCallback()
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-        enableMapMyLocation()
+            checkDeviceLocationSettingsAndEnableMapByLocation()
+
+        } else {
+
+            requestPermissions(
+                arrayOf<String>(Manifest.permission.ACCESS_FINE_LOCATION),
+                FINE_LOCATION_PERMISSION_REQUEST_CODE)
+        }
     }
 
     private fun addPoiMarker(poi: PointOfInterest) {
@@ -159,6 +176,12 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     @SuppressLint("MissingPermission")
+    private fun enableMapMyLocation() {
+        map.isMyLocationEnabled = true
+        addLastLocationCallback()
+    }
+
+    @SuppressLint("MissingPermission")
     private fun addLastLocationCallback() {
 
         val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
@@ -167,34 +190,19 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         // On completion, zoom to the user location and add marker
         lastLocationTask.addOnCompleteListener(requireActivity()) { task ->
 
-            val latLng = if(task.isSuccessful) {
-                    val taskResult = task.result
-                    LatLng(taskResult!!.latitude, taskResult.longitude)
+            if(task.isSuccessful) {
+                val taskResult = task.result
+                taskResult?.run {
 
-                } else { DEFAULT_LAT_LNG }
-
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                latLng,
-                MapZoomLevel.Streets.level))
-
-            addMapMarker(latLng)
-            marker!!.showInfoWindow()
-        }
-    }
-
-    private fun enableMapMyLocation() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
-            map.isMyLocationEnabled = true
-
-        } else {
-
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf<String>(Manifest.permission.ACCESS_FINE_LOCATION),
-                FINE_LOCATION_PERMISSION_REQUEST_CODE)
+                    val latLng = LatLng(latitude, longitude)
+                    map.moveCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            latLng,
+                            MapZoomLevel.Streets.level
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -209,9 +217,71 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             if (grantResults.isNotEmpty() &&
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
+                //enableMapMyLocation()
+                checkDeviceLocationSettingsAndEnableMapByLocation()
+
+            } else {
+                _viewModel.showSnackBarInt.value = R.string.permission_denied_explanation
+            }
+        }
+    }
+
+    /*
+    *  Uses the Location Client to check the current state of location settings, and gives the user
+    *  the opportunity to turn on location services within our app.
+    */
+    private fun checkDeviceLocationSettingsAndEnableMapByLocation(resolve:Boolean = true) {
+
+        val locationRequest = LocationRequest.create().apply {
+            priority = LocationRequest.PRIORITY_LOW_POWER
+        }
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        val settingsClient = LocationServices.getSettingsClient(requireActivity())
+        val locationSettingsResponseTask = settingsClient.checkLocationSettings(builder.build())
+
+        locationSettingsResponseTask.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException && resolve){
+                try {
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                        TURN_DEVICE_LOCATION_ON_REQUEST_CODE,
+                        null,
+                        0,
+                        0,
+                        0,
+                        null)
+
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    //Log.d(SaveReminderFragment.TAG, "Error getting location settings resolution: " + sendEx.message)
+                }
+            } else {
+                Snackbar.make(
+                    requireView(),
+                    R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
+                ).setAction(android.R.string.ok) {
+                    checkDeviceLocationSettingsAndEnableMapByLocation()
+                }.show()
+            }
+        }
+
+        locationSettingsResponseTask.addOnCompleteListener {
+            if ( it.isSuccessful ) {
                 enableMapMyLocation()
             }
         }
     }
 
+    /*
+    *  When we get the result from asking the user to turn on device location, we call
+    *  checkDeviceLocationSettingsAndStartGeofence again to make sure it's actually on, but
+    *  we don't resolve the check to keep the user from seeing an endless loop.
+    */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == TURN_DEVICE_LOCATION_ON_REQUEST_CODE) {
+            checkDeviceLocationSettingsAndEnableMapByLocation(false)
+        }
+    }
 }

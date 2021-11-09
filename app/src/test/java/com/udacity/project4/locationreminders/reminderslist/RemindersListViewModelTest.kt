@@ -15,12 +15,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.test.AutoCloseKoinTest
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 @Config(sdk = [Build.VERSION_CODES.P])
-class RemindersListViewModelTest {
+class RemindersListViewModelTest : AutoCloseKoinTest() {
 
     private lateinit var fakeReminderDataSource: FakeDataSource
     private lateinit var remindersViewModel: RemindersListViewModel
@@ -42,7 +43,9 @@ class RemindersListViewModelTest {
     }
 
     @Test
-    fun shouldReturnError () = runBlockingTest  {
+    fun testShouldReturnError () = runBlockingTest  {
+        fakeReminderDataSource.setShouldReturnError(true)
+        saveReminderFakeData()
         remindersViewModel.loadReminders()
         MatcherAssert.assertThat(remindersViewModel.showNoData.value, CoreMatchers.`is`(true))
     }

@@ -15,12 +15,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.test.AutoCloseKoinTest
 import org.robolectric.annotation.Config
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.P])
-class SaveReminderViewModelTest {
+class SaveReminderViewModelTest: AutoCloseKoinTest(){
 
     private lateinit var fakeReminderDataSource: FakeDataSource
     private lateinit var saveReminderViewModel: SaveReminderViewModel
