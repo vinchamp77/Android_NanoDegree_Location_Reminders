@@ -3,7 +3,6 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -53,19 +52,12 @@ class SaveReminderFragment : BaseFragment() {
     private lateinit var geofencingClient: GeofencingClient
     // A PendingIntent for the Broadcast Receiver that handles geofence transitions.
     private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(contxt, GeofenceBroadcastReceiver::class.java)
+        val intent = Intent(requireContext(), GeofenceBroadcastReceiver::class.java)
         intent.action = GeofenceBroadcastReceiver.ACTION_GEOFENCE_EVENT
         PendingIntent.getBroadcast(
-            contxt,
+            requireContext(),
             0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT)
-    }
-
-    private lateinit var contxt: Context
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        contxt = context
     }
 
     override fun onCreateView(
@@ -107,10 +99,7 @@ class SaveReminderFragment : BaseFragment() {
 
             if(_viewModel.validateEnteredData(reminderDataItem)) {
 
-                _viewModel.saveReminder(reminderDataItem)
-
                 if (fineAndBackgroundLocationPermissionsApproved()) {
-                    //startGeoFence()
                     checkDeviceLocationSettingsAndStartGeofence()
                 } else {
                     requestFineAndBackgroundLocationPermissions()
@@ -245,7 +234,14 @@ class SaveReminderFragment : BaseFragment() {
             .addGeofence(geofence)
             .build()
 
-        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)
+        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+            addOnSuccessListener {
+                _viewModel.saveReminder(reminderDataItem)
+            }
+            addOnFailureListener {
+                _viewModel.showSnackBarInt.value = R.string.error_adding_geofence
+            }
+        }
     }
 
     /*
