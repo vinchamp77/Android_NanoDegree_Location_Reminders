@@ -47,7 +47,10 @@ class RemindersListViewModelTest : AutoCloseKoinTest() {
         fakeReminderDataSource.setShouldReturnError(true)
         saveReminderFakeData()
         remindersViewModel.loadReminders()
-        MatcherAssert.assertThat(remindersViewModel.showNoData.value, CoreMatchers.`is`(true))
+
+        MatcherAssert.assertThat(
+            remindersViewModel.showSnackBar.value, CoreMatchers.`is`("Reminders not found")
+        )
     }
 
     @Test
