@@ -5,14 +5,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Looper
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.fragment.findNavController
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -176,38 +172,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     private fun enableMapMyLocation() {
         map.isMyLocationEnabled = true
-        requestLocationCallback()
+        addLastLocationCallback()
     }
 
     /* This DOES NOT Work when device location is off*/
     @SuppressLint("MissingPermission")
-    private fun requestLocationCallback() {
+    private fun addLastLocationCallback() {
 
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult?) {
-                super.onLocationResult(locationResult)
-
-                locationResult?.run {
-                    val latLng = LatLng(lastLocation.latitude, lastLocation.longitude)
-                    map.moveCamera(
-                        CameraUpdateFactory.newLatLngZoom(
-                            latLng,
-                            MapZoomLevel.Streets.level
-                        )
-                    )
-                }
-            }
-        }
-
-        with(LocationRequest()) {
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            interval = 0
-            fastestInterval = 0
-            val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-            fusedLocationProviderClient.requestLocationUpdates(this, locationCallback, Looper.myLooper())
-        }
-
-        /* Another approach - commented out here for future reference
         val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
         val lastLocationTask = fusedLocationProviderClient.lastLocation
 
@@ -225,9 +196,38 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                             MapZoomLevel.Streets.level
                         )
                     )
+
+                    addMapMarker(latLng)
                 }
             }
-        }*/
+        }
+
+        /* Another approach - commented out here for future reference */
+//        val locationCallback = object : LocationCallback() {
+//            override fun onLocationResult(locationResult: LocationResult?) {
+//                super.onLocationResult(locationResult)
+//
+//                locationResult?.run {
+//                    val latLng = LatLng(lastLocation.latitude, lastLocation.longitude)
+//                    map.moveCamera(
+//                        CameraUpdateFactory.newLatLngZoom(
+//                            latLng,
+//                            MapZoomLevel.Streets.level
+//                        )
+//                    )
+//
+//                    addMapMarker(latLng)
+//                }
+//            }
+//        }
+//
+//        with(LocationRequest()) {
+//            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+//            interval = 0
+//            fastestInterval = 0
+//            val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+//            fusedLocationProviderClient.requestLocationUpdates(this, locationCallback, Looper.myLooper())
+//        }
     }
 
     override fun onRequestPermissionsResult(
