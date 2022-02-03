@@ -7,8 +7,8 @@ This project is part of the [Andrlid Kotlin Developer Nanodegree](https://vtsen.
 
 
 ## Requirements
-
-You need to setup your own `google-services.json` and replace the existing one in the `app` folder directory.
+- Android Studio Bumblebee or later
+- You need to setup your own `google-services.json` and replace the existing one in the `app` folder directory.
 
 ### Steps to Setup google-services.json
 1. Go to https://console.firebase.google.com/
