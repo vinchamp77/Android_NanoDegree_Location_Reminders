@@ -2,9 +2,13 @@
 
 This is based on the starter code from [here](https://github.com/udacity/nd940-android-kotlin-c4-starter).
 
-## Requirements
+This project is part of the [Andrlid Kotlin Developer Nanodegree](https://vtsen.hashnode.dev/is-it-worth-to-pay-for-android-kotlin-developer-nanodegree) from Udacity. For details, please refer to the following:
+- [Course 4 Project: Build a Location Reminder App](https://vtsen.hashnode.dev/android-kotlin-developer-nanodegree-projects-review#heading-course-4-project-build-a-location-reminder-app)
 
-You need to setup your own `google-services.json` and replace the existing one in the `app` folder directory.
+
+## Requirements
+- Android Studio Bumblebee or later
+- You need to setup your own `google-services.json` and replace the existing one in the `app` folder directory.
 
 ### Steps to Setup google-services.json
 1. Go to https://console.firebase.google.com/
